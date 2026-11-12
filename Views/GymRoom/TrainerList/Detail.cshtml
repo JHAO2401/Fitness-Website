@@ -1,0 +1,105 @@
+﻿@model GYM.Models.ViewModels.TrainerDetailViewModel
+@{
+    Layout = "~/Views/GymRoom/_GymRoomLayout.cshtml";
+    bool isLoggedIn = User.Identity != null && User.Identity.IsAuthenticated;
+    bool isMember = User.IsInRole("Member");
+}
+
+<section class="member-section">
+    <div class="member-card trainer-detail-header">
+        <img src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/image/logo.png" : Model.AvatarUrl)"
+             alt="@Model.FullName" class="trainer-detail-avatar"
+             onerror="this.onerror=null; this.src='/image/logo.png';" />
+        <div>
+            <h2>@Model.FullName</h2>
+            <p class="trainer-list-specialty">@Model.Specialty</p>
+            @if (!string.IsNullOrEmpty(Model.PhoneNumber))
+            {
+                <p class="trainer-detail-phone">📞 @Model.PhoneNumber</p>
+            }
+            <div class="trainer-list-rank">
+                <img src="@Model.RankImageUrl" alt="@Model.Rank" onerror="this.onerror=null; this.src='/image/logo.png';" />
+                <span>@Model.Rank · @Model.Lbs lbs</span>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Description))
+    {
+        <div class="member-card" style="margin-top:16px;">
+            <h2>About</h2>
+            <p style="font-size:14px; color:#555; line-height:1.6; white-space:pre-line;">@Model.Description</p>
+        </div>
+    }
+</section>
+
+<section class="member-section">
+    <h2 class="member-section-title">Available Time Slots</h2>
+
+    <div class="summary-error" id="bookingError" style="max-width:600px;"></div>
+    <div class="summary-success" id="bookingSuccess" style="max-width:600px;"></div>
+
+    @if (Model.AvailableSlots.Count == 0)
+    {
+        <div class="member-empty-state">No available slots at the moment. Please check back later.</div>
+    }
+    else
+    {
+        <div class="slot-list-grid">
+            @foreach (var slot in Model.AvailableSlots)
+            {
+                <div class="slot-card" id="slot-@slot.SlotId">
+                    <div class="slot-card-date">@slot.Date.ToString("dd MMM yyyy")</div>
+                    <div class="slot-card-time">@slot.StartTime.ToString(@"hh\:mm") - @slot.EndTime.ToString(@"hh\:mm")</div>
+                    @if (isMember)
+                    {
+                        <button class="member-cta-btn slot-book-btn" onclick="bookSlot(@slot.SlotId)">Book Now</button>
+                    }
+                    else if (isLoggedIn)
+                    {
+                        <span class="protected-text">Only members can book appointments</span>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login?returnUrl=@Uri.EscapeDataString($"/GymRoom/TrainerDetail?id={Model.TrainerId}")" class="member-cta-btn slot-book-btn" style="display:inline-block; text-decoration:none; text-align:center;">
+                            Login to Book
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script>
+        async function bookSlot(slotId) {
+            const errorEl = document.getElementById('bookingError');
+            const successEl = document.getElementById('bookingSuccess');
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            try {
+                const response = await fetch('/Member/BookAppointment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slotId: slotId })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    successEl.textContent = 'Appointment requested! Waiting for trainer confirmation.';
+                    successEl.style.display = 'block';
+                    const card = document.getElementById('slot-' + slotId);
+                    if (card) card.remove();
+                } else {
+                    errorEl.textContent = result.message || 'Failed to book this slot';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Something went wrong. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        }
+    </script>
+}

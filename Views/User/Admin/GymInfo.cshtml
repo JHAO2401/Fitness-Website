@@ -1,0 +1,271 @@
+﻿@model GYM.Models.GymInfo
+@{
+    Layout = "~/Views/User/Admin/_AdminLayout.cshtml";
+    var equipmentList = ViewBag.EquipmentList as List<GYM.Models.Equipment>;
+    var photoList = ViewBag.PhotoList as List<GYM.Models.GymPhoto>;
+}
+
+<!-- Photo Gallery -->
+<div class="panel">
+    <div class="panel-header">
+        <h2>Gym Photo Gallery</h2>
+        <button type="button" class="action-btn edit" id="addPhotoBtn">+ Add Photo</button>
+        <input type="file" id="photoInput" accept="image/*" style="display:none;" />
+    </div>
+
+    <div class="summary-error" id="photoError" style="margin: 16px 24px 0;"></div>
+
+    <div class="photo-dropzone" id="photoDropzone">
+        @if (photoList != null && photoList.Count > 0)
+        {
+            <div class="photo-gallery-grid" id="photoGalleryGrid">
+                @foreach (var photo in photoList)
+                {
+                    <div class="photo-tile" id="photo-@photo.GymPhotoId">
+                        <img src="@photo.ImageUrl" alt="Gym Photo" />
+                        @if (photo.IsCover)
+                        {
+                            <span class="cover-badge">Cover</span>
+                        }
+                        <div class="photo-tile-actions">
+                            @if (!photo.IsCover)
+                            {
+                                <button class="photo-action-btn" onclick="setCoverPhoto(@photo.GymPhotoId)" title="Set as cover">⭐</button>
+                            }
+                            <button class="photo-action-btn delete" onclick="confirmDeletePhoto(@photo.GymPhotoId)" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="dropzone-hint" id="dropzoneHint">
+                📷 Drag & drop a photo here, or click "+ Add Photo" above
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Gym Details Form -->
+<div class="panel" style="margin-top: 24px;">
+    <div class="panel-header">
+        <h2>Gym Details</h2>
+    </div>
+    <div class="profile-form-body">
+        <div class="summary-error" id="summaryError"></div>
+        <div class="summary-success" id="summarySuccess"></div>
+
+        <form id="gymInfoForm" novalidate>
+            <div class="form-group">
+                <label for="GymName">Gym Name</label>
+                <input type="text" id="GymName" value="@Model.GymName" />
+                <div class="field-error" id="GymNameError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="Address">Address</label>
+                <input type="text" id="Address" value="@Model.Address" />
+                <div class="field-error" id="AddressError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="PhoneNumber">Phone Number</label>
+                <input type="text" id="PhoneNumber" value="@Model.PhoneNumber" />
+                <div class="field-error" id="PhoneNumberError"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Operating Hours</label>
+                <div class="field-error" id="hoursError"></div>
+
+                <div class="hours-range-form">
+                    <div class="form-group">
+                        <label>Start Day</label>
+                        <select id="rangeStartDay"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>End Day</label>
+                        <select id="rangeEndDay"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="time" id="rangeStartTime" value="06:00" />
+                    </div>
+                    <div class="form-group">
+                        <label>End Time</label>
+                        <input type="time" id="rangeEndTime" value="23:00" />
+                    </div>
+                </div>
+                <div class="hours-range-closed-row">
+                    <button type="button" class="closed-toggle-btn" id="rangeClosedToggle" onclick="toggleRangeClosed()">Open</button>
+                    <span style="font-size:12px; color:#999;">Mark this range as Closed</span>
+                </div>
+
+                <div class="hours-range-list" id="hoursRangeList"></div>
+
+                @{
+                    var operatingHours = ViewBag.OperatingHours as List<GYM.Models.ViewModels.GymOperatingHourItemViewModel>;
+                }
+                <script type="application/json" id="operatingHoursData">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(operatingHours))</script>
+            </div>
+
+            <div class="form-group">
+                <label for="Description">Description</label>
+                <textarea id="Description" rows="3">@Model.Description</textarea>
+            </div>
+
+            <button type="submit" id="saveGymInfoBtn">Save Changes</button>
+        </form>
+    </div>
+</div>
+<!-- Equipment List -->
+<div class="panel equipment-panel" style="margin-top: 24px;">
+    <div class="panel-header">
+        <h2>Gym Equipment</h2>
+        <button class="action-btn edit" onclick="openAddEquipmentModal()">+ Add Equipment</button>
+    </div>
+
+    @if (equipmentList == null || equipmentList.Count == 0)
+    {
+        <div class="empty-state">No equipment added yet.</div>
+    }
+    else
+    {
+        <div class="equipment-grid" id="equipmentGrid">
+            @foreach (var eq in equipmentList)
+            {
+                <div class="equipment-card" id="equipment-@eq.EquipmentId">
+                    <img src="@(string.IsNullOrEmpty(eq.ImageUrl) ? "/image/logo.png" : eq.ImageUrl)"
+                         alt="@eq.Name"
+                         class="equipment-img"
+                         onerror="this.onerror=null; this.src='/image/logo.png';" />
+                    <div class="equipment-info">
+                        <h4>@eq.Name</h4>
+                        <p class="equipment-desc">@(eq.Description ?? "No description")</p>
+                        <div class="equipment-meta">
+                            <span>Qty: @eq.Quantity</span>
+                            <span class="equipment-status @(eq.IsAvailable ? "available" : "unavailable")">
+                                @(eq.IsAvailable ? "Available" : "Unavailable")
+                            </span>
+                        </div>
+                        <div class="equipment-actions">
+                            <button class="action-btn edit"
+                                    onclick="openEditEquipmentModal(@eq.EquipmentId, '@eq.Name', '@(eq.Description ?? "")', @eq.Quantity, @eq.IsAvailable.ToString().ToLower(), '@(eq.ImageUrl ?? "")')">
+                                Edit
+                            </button>
+                            <button class="action-btn deactivate" onclick="confirmDeleteEquipment(@eq.EquipmentId)">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Add/Edit Equipment Modal -->
+<div class="modal-overlay" id="equipmentModalOverlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="equipmentModalTitle">Add Equipment</h3>
+            <button class="modal-close" onclick="closeEquipmentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="summary-error" id="equipmentModalError"></div>
+
+            <form id="equipmentForm" novalidate>
+                <input type="hidden" id="EquipmentId" value="0" />
+                <div class="form-group">
+                    <div id="equipmentPhotoDropzone"
+                         style="display:flex; align-items:center; gap:16px; padding:16px; border:2px dashed #ddd; border-radius:12px; background:#fafafd; margin-bottom:12px;">
+                        <img id="equipmentImgPreview" src="/image/logo.png" alt="Preview"
+                             style="width:64px; height:64px; object-fit:contain; border-radius:8px; flex-shrink:0; background:#f0f0f5; padding:8px;" />
+                        <span style="font-size:12px; color:#999;">or drag & drop here · JPG, PNG, GIF · Max 2MB</span>
+                    </div>
+
+                    <div style="text-align:center;">
+                        <label for="equipmentImageInput"
+                               style="display:inline-block; background:#4a4ae0; color:#fff; padding:8px 20px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">
+                            Choose Photo
+                        </label>
+                    </div>
+                    <input type="file" id="equipmentImageInput" accept="image/*" style="display:none;" />
+                </div>
+
+                <div class="form-group">
+                    <label for="EquipmentName">Equipment Name</label>
+                    <input type="text" id="EquipmentName" placeholder="e.g. Treadmill" />
+                    <div class="field-error" id="EquipmentNameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="EquipmentDescription">Description</label>
+                    <textarea id="EquipmentDescription" rows="2" placeholder="Optional"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="EquipmentQuantity">Quantity</label>
+                    <input type="number" id="EquipmentQuantity" min="0" value="1" oninput="if(this.value<0) this.value=0;" />
+                    <div class="field-error" id="EquipmentQuantityError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Availability</label>
+                    <div class="availability-toggle">
+                        <button type="button" class="avail-btn available active" id="btnAvailable" onclick="setAvailability(true)">
+                            ✓ Available
+                        </button>
+                        <button type="button" class="avail-btn unavailable" id="btnUnavailable" onclick="setAvailability(false)">
+                            ✕ Unavailable
+                        </button>
+                    </div>
+                    <input type="hidden" id="EquipmentAvailable" value="true" />
+                </div>
+
+                <button type="submit" id="saveEquipmentBtn">Save Equipment</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Equipment Confirmation -->
+<div class="modal-overlay" id="deleteEquipmentModalOverlay">
+    <div class="modal-box small">
+        <div class="modal-header">
+            <h3>Delete Equipment</h3>
+            <button class="modal-close" onclick="closeDeleteEquipmentModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-hint">Are you sure you want to delete this equipment? This action cannot be undone.</p>
+            <div class="summary-error" id="deleteEquipmentError"></div>
+            <div class="modal-btn-row">
+                <button class="action-btn full-width" onclick="closeDeleteEquipmentModal()">Cancel</button>
+                <button class="action-btn deactivate full-width" id="confirmDeleteEquipmentBtn" onclick="deleteEquipment()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Photo Confirmation -->
+<div class="modal-overlay" id="deletePhotoModalOverlay">
+    <div class="modal-box small">
+        <div class="modal-header">
+            <h3>Delete Photo</h3>
+            <button class="modal-close" onclick="closeDeletePhotoModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-hint">Are you sure you want to delete this photo?</p>
+            <div class="summary-error" id="deletePhotoError"></div>
+            <div class="modal-btn-row">
+                <button class="action-btn full-width" onclick="closeDeletePhotoModal()">Cancel</button>
+                <button class="action-btn deactivate full-width" id="confirmDeletePhotoBtn" onclick="deletePhoto()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/gyminfo.js?v=15"></script>
+}

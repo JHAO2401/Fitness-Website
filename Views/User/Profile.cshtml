@@ -1,0 +1,104 @@
+﻿@model GYM.Models.ViewModels.ProfileViewModel
+@{
+    Layout = ViewData["Layout"] as string;
+}
+
+<div class="profile-grid">
+    <div class="panel avatar-panel">
+        <div class="panel-header">
+            <h2>Profile Picture</h2>
+        </div>
+        <div class="avatar-body">
+            <img id="avatarPreview"
+                 src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "/image/logo.png" : Model.AvatarUrl)"
+                 alt="Avatar"
+                 class="avatar-img"
+                 onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23e5e5ea%22/><text x=%2250%22 y=%2262%22 font-size=%2245%22 text-anchor=%22middle%22>👤</text></svg>';" />
+
+            <label for="avatarInput" class="avatar-upload-btn">Change Photo</label>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none;" />
+            <div class="field-hint">JPG, PNG or GIF. Max 2MB.</div>
+            <div class="summary-error" id="avatarError"></div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h2>Account Information</h2>
+        </div>
+        <div class="profile-form-body">
+            <div class="summary-error" id="summaryError"></div>
+            <div class="summary-success" id="summarySuccess"></div>
+
+            <form id="profileForm" novalidate>
+                <input type="hidden" id="UserId" value="@Model.UserId" />
+
+                <div class="form-group">
+                    <label for="FullName">Full Name</label>
+                    <input type="text" id="FullName" value="@Model.FullName" />
+                    <div class="field-error" id="FullNameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="Email">Email</label>
+                    <input type="email" id="Email" value="@Model.Email" />
+                    <div class="field-error" id="EmailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Gender</label>
+                    <div class="role-toggle">
+                        <button type="button" class="gender-btn @(Model.Gender != "Female" ? "active" : "")" data-gender="Male">♂️ Male</button>
+                        <button type="button" class="gender-btn @(Model.Gender == "Female" ? "active" : "")" data-gender="Female">♀️ Female</button>
+                    </div>
+                    <input type="hidden" id="Gender" value="@(Model.Gender ?? "Male")" />
+                </div>
+
+                <hr class="divider" />
+
+                <hr class="divider" />
+                <p class="section-label">Change Password (optional)</p>
+
+                <div class="form-group">
+                    <label for="CurrentPassword">Current Password</label>
+                    <input type="password" id="CurrentPassword" placeholder="Required only if changing password" />
+                    <div class="field-error" id="CurrentPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="NewPassword">New Password</label>
+                    <input type="password" id="NewPassword" placeholder="Leave blank to keep current password" />
+
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar"><div class="strength-bar-fill"></div></div>
+                        <div class="strength-label"></div>
+                    </div>
+
+                    <div class="field-hint">Must include an uppercase letter, a number, and a special character</div>
+                    <div class="field-error" id="NewPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="ConfirmNewPassword">Confirm New Password</label>
+                    <input type="password" id="ConfirmNewPassword" />
+                    <div class="field-error" id="ConfirmNewPasswordError"></div>
+                </div>
+
+                <button type="submit" id="saveProfileBtn">Save Changes</button>
+            </form>
+
+            <div class="member-logout-row">
+                <a href="/Account/Logout" class="action-btn deactivate full-width" style="display:inline-block; text-decoration:none; text-align:center; margin-top:16px;">
+                    🚪 Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/profile.js?v=12"></script>
+    <script>
+        initProfilePage();
+    </script>
+}

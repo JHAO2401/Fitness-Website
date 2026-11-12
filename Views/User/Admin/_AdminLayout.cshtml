@@ -1,0 +1,77 @@
+﻿@using System.Security.Claims
+@using GYM.Data
+@inject ApplicationDbContext DbContext
+@{
+    Layout = null;
+    var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var currentAvatarUrl = "";
+    var currentFullName = "Admin";
+    if (!string.IsNullOrEmpty(userIdClaim))
+    {
+        var currentUser = await DbContext.Users.FindAsync(int.Parse(userIdClaim));
+        if (currentUser != null)
+        {
+            currentAvatarUrl = currentUser.AvatarUrl ?? "";
+            currentFullName = currentUser.FullName;
+        }
+    }
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin</title>
+    <link rel="icon" type="image/png" href="/image/logo.png" />
+    <link rel="stylesheet" href="/css/admin-dashboard.css?v=20" />
+</head>
+<body>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="/image/logo.png" alt="Logo" onerror="this.style.display='none'" />
+                <span>FitZone Admin</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/Admin/Index" class="@(ViewData["Active"] as string == "dashboard" ? "active" : "")">
+                    <span class="nav-icon">📊</span> Dashboard
+                </a>
+                <a href="/Admin/ManageUsers" class="@(ViewData["Active"] as string == "users" ? "active" : "")">
+                    <span class="nav-icon">👥</span> Manage Users
+                </a>
+                <a href="/Admin/ManageAppointments" class="@(ViewData["Active"] as string == "appointments" ? "active" : "")">
+                    <span class="nav-icon">🗓️</span> Appointments
+                </a>
+                <a href="/Admin/GymInfo" class="@(ViewData["Active"] as string == "gyminfo" ? "active" : "")">
+                    <span class="nav-icon">📍</span> Gym Info
+                </a>
+                <a href="/Admin/Profile" class="@(ViewData["Active"] as string == "profile" ? "active" : "")">
+                    <span class="nav-icon">⚙️</span> My Profile
+                </a>
+            </nav>
+
+        </aside>
+
+        <div class="main-content">
+            <header class="topbar">
+                <h1>@ViewData["Title"]</h1>
+                <a href="/Admin/Profile" class="user-badge">
+                    <img src="@(string.IsNullOrEmpty(currentAvatarUrl) ? "/image/logo.png" : currentAvatarUrl)"
+                         alt="Avatar"
+                         class="topbar-avatar"
+                         onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23ddd%22/><text x=%2250%22 y=%2262%22 font-size=%2245%22 text-anchor=%22middle%22>👤</text></svg>';" />
+                    <span>@currentFullName</span>
+                </a>
+            </header>
+
+            <main class="page-body">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

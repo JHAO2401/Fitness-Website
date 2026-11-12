@@ -1,0 +1,40 @@
+﻿@model List<GYM.Models.ViewModels.MyBookingViewModel>
+@{
+    Layout = "~/Views/GymRoom/_GymRoomLayout.cshtml";
+}
+
+<section class="member-section">
+    <a href="/GymRoom/TrainerList" class="back-to-list-link">← Back to Trainer List</a>
+
+    <div class="member-card trainer-detail-header" style="margin-top:12px;">
+        <img src="@(string.IsNullOrEmpty(ViewBag.TrainerAvatar as string) ? "/image/logo.png" : ViewBag.TrainerAvatar)"
+             alt="Trainer" class="trainer-detail-avatar"
+             onerror="this.onerror=null; this.src='/image/logo.png';" />
+        <div>
+            <h2>@ViewBag.TrainerName</h2>
+            <p class="trainer-list-specialty">Your booking history</p>
+        </div>
+    </div>
+</section>
+
+<section class="member-section">
+    @if (Model.Count == 0)
+    {
+        <div class="member-empty-state">You have no bookings with this trainer yet.</div>
+    }
+    else
+    {
+        <div class="quest-list">
+            @foreach (var b in Model)
+            {
+                <div class="quest-item">
+                    <div class="quest-item-info">
+                        <h4>@b.Date.ToString("dd MMM yyyy")</h4>
+                        <p>@b.StartTime.ToString(@"hh\:mm") - @b.EndTime.ToString(@"hh\:mm")</p>
+                    </div>
+                    <span class="appt-status @b.Status">@b.Status</span>
+                </div>
+            }
+        </div>
+    }
+</section>

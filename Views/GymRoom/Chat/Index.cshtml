@@ -1,0 +1,66 @@
+﻿@model GYM.Models.ViewModels.ChatPageViewModel
+@{
+    Layout = "~/Views/GymRoom/_GymRoomLayout.cshtml";
+}
+
+<div class="chat-layout">
+    <div class="chat-contacts">
+        <div class="chat-contacts-header">Trainers</div>
+        @if (Model?.Contacts.Count == 0)
+        {
+            <div class="chat-empty-contacts">No trainers to chat with yet. Book an appointment first.</div>
+        }
+        else
+        {
+            @foreach (var c in Model.Contacts)
+            {
+                <a href="/Chat/Index?contactId=@c.UserId" class="chat-contact-item @(Model.SelectedContactId == c.UserId ? "active" : "")">
+                    <img src="@(string.IsNullOrEmpty(c.AvatarUrl) ? "/image/logo.png" : c.AvatarUrl)" alt="@c.FullName"
+                         onerror="this.onerror=null; this.src='/image/logo.png';" />
+                    <div class="chat-contact-info">
+                        <div class="chat-contact-name">@c.FullName</div>
+                        <div class="chat-contact-last">@c.LastMessage</div>
+                    </div>
+                    @if (c.UnreadCount > 0)
+                    {
+                        <span class="chat-unread-badge">@c.UnreadCount</span>
+                    }
+                </a>
+            }
+        }
+    </div>
+
+    <div class="chat-window">
+        @if (Model.SelectedContactId.HasValue)
+        {
+            <div class="chat-window-header">
+                <img src="@(string.IsNullOrEmpty(Model.SelectedContactAvatar) ? "/image/logo.png" : Model.SelectedContactAvatar)" alt="@Model.SelectedContactName"
+                     onerror="this.onerror=null; this.src='/image/logo.png';" />
+                <span>@Model.SelectedContactName</span>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <form id="chatForm" class="chat-input-row">
+                <input type="hidden" id="ContactId" value="@Model.SelectedContactId" />
+                <input type="text" id="MessageInput" placeholder="Type a message..." autocomplete="off" />
+                <button type="submit">Send</button>
+            </form>
+        }
+        else
+        {
+            <div class="chat-no-selection">
+                <div class="coming-soon-icon">💬</div>
+                <p>Select a trainer to start chatting.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/chat.js"></script>
+    @if (Model.SelectedContactId.HasValue)
+    {
+        <script>
+            initChat(@Model.SelectedContactId);
+        </script>
+    }
+}

@@ -1,0 +1,86 @@
+﻿@model GYM.Models.ViewModels.MemberHomeViewModel
+@{
+    Layout = "~/Views/User/Member/_MemberLayout.cshtml";
+}
+
+@if (Model.GymInfo == null)
+{
+    <div class="member-empty-state">Gym information is not set up yet.</div>
+}
+else
+{
+    <!-- Gym Cover -->
+    <section class="member-hero">
+        @{
+            var coverPhoto = Model.Photos.FirstOrDefault(p => p.IsCover);
+        }
+        <img src="@(coverPhoto != null ? coverPhoto.ImageUrl : "/image/logo.png")" alt="Gym Cover" class="member-hero-img"
+             onerror="this.onerror=null; this.src='/image/logo.png';" />
+        <div class="member-hero-overlay">
+            <h1>@Model.GymInfo.GymName</h1>
+            <p>@Model.GymInfo.Description</p>
+        </div>
+    </section>
+
+    <!-- Gym Details -->
+    <section class="member-section">
+        <div class="member-card">
+            <h2>Gym Information</h2>
+            <div class="member-info-row"><span>📍</span> @Model.GymInfo.Address</div>
+            <div class="member-info-row"><span>📞</span> @Model.GymInfo.PhoneNumber</div>
+            <div class="member-info-row member-hours-row">
+                <span>🕒</span>
+                <div class="member-hours-list">
+                    @foreach (var line in (Model.GymInfo.OperatingHours ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var parts = line.Split(':', 2);
+                        var days = parts[0].Trim();
+                        var time = parts.Length > 1 ? parts[1].Trim() : "";
+                        var isClosed = time.Equals("Closed", StringComparison.OrdinalIgnoreCase);
+                        <div class="hours-line">
+                            <span class="hours-day">@days</span>
+                            <span class="hours-time @(isClosed ? "is-closed" : "is-open")">@time</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Photo Gallery -->
+    @if (Model.Photos.Count > 0)
+    {
+        <section class="member-section">
+            <h2 class="member-section-title">Gym Gallery</h2>
+            <div class="member-photo-grid">
+                @foreach (var photo in Model.Photos)
+                {
+                    <div class="member-photo-tile">
+                        <img src="@photo.ImageUrl" alt="Gym Photo" />
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Equipment -->
+    @if (Model.EquipmentList.Count > 0)
+    {
+        <section class="member-section">
+            <h2 class="member-section-title">Available Equipment</h2>
+            <div class="member-equipment-grid">
+                @foreach (var eq in Model.EquipmentList)
+                {
+                    <div class="member-equipment-card">
+                        <img src="@(string.IsNullOrEmpty(eq.ImageUrl) ? "/image/logo.png" : eq.ImageUrl)"
+                             alt="@eq.Name" onerror="this.onerror=null; this.src='/image/logo.png';" />
+                        <div class="member-equipment-info">
+                            <h4>@eq.Name</h4>
+                            <p>Qty: @eq.Quantity</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+}

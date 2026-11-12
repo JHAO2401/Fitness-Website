@@ -1,0 +1,121 @@
+﻿@{
+    ViewData["Title"] = "Register";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Register - GYM System</title>
+    <link rel="icon" type="image/png" href="/image/logo.png" />
+    <link rel="stylesheet" href="/css/auth.css" />
+</head>
+<body>
+
+    <nav class="auth-navbar">
+        <div class="nav-logo">
+            <img src="/image/logo.png" alt="FitZone Logo" onerror="this.style.display='none'" />
+            FitZone GYM
+        </div>
+        <a href="/Home/Index" class="back-home-btn">← Back to Home</a>
+    </nav>
+
+    <div class="auth-wrapper">
+        <div class="auth-box">
+            <div class="auth-header">
+                <h2>Create Account</h2>
+                <p class="subtitle">Join the GYM system</p>
+            </div>
+
+            <div class="auth-tabs">
+                <a href="/Account/Login">Sign In</a>
+                <a href="/Account/Register" class="active">Register</a>
+            </div>
+
+            <div class="auth-body">
+                <div class="summary-error" id="summaryError"></div>
+                <div class="summary-success" id="summarySuccess"></div>
+
+                <form id="registerForm" novalidate>
+                    <div class="form-group">
+                        <label for="FullName">Full Name</label>
+                        <input type="text" id="FullName" name="FullName" placeholder="John Doe" />
+                        <div class="field-error" id="FullNameError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Email">Email</label>
+                        <input type="email" id="Email" name="Email" placeholder="you@example.com" />
+                        <div class="field-error" id="EmailError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="PhoneNumber">Phone Number</label>
+                        <input type="text" id="PhoneNumber" name="PhoneNumber" placeholder="012-3456789" maxlength="12" />
+                        <div class="field-hint">Format: 01X-XXXXXXX or 011-XXXXXXXX (dashes added automatically)</div>
+                        <div class="field-error" id="PhoneNumberError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <div class="role-toggle">
+                            <button type="button" class="role-btn active" data-gender="Male">
+                                <span class="role-icon">♂️</span> Male
+                            </button>
+                            <button type="button" class="role-btn" data-gender="Female">
+                                <span class="role-icon">♀️</span> Female
+                            </button>
+                        </div>
+                        <input type="hidden" id="Gender" name="Gender" value="Male" />
+                        <div class="field-error" id="GenderError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Register As</label>
+                        <div class="role-toggle">
+                            <button type="button" class="role-btn active" data-role="Member">
+                                <span class="role-icon">🧑‍🤝‍🧑</span> Member
+                            </button>
+                            <button type="button" class="role-btn" data-role="Trainer">
+                                <span class="role-icon">🧑‍🏫</span> Trainer
+                            </button>
+                        </div>
+                        <input type="hidden" id="Role" name="Role" value="Member" />
+                        <div class="field-error" id="RoleError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Password">Password</label>
+                        <input type="password" id="Password" name="Password" placeholder="At least 8 characters" />
+
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="strength-bar"><div class="strength-bar-fill"></div></div>
+                            <div class="strength-label"></div>
+                        </div>
+
+                        <div class="field-hint">Must include an uppercase letter, a number, and a special character</div>
+                        <div class="field-error" id="PasswordError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ConfirmPassword">Confirm Password</label>
+                        <input type="password" id="ConfirmPassword" name="ConfirmPassword" placeholder="Re-enter password" />
+                        <div class="field-error" id="ConfirmPasswordError"></div>
+                    </div>
+
+                    <button type="submit" id="registerBtn">Register</button>
+                </form>
+
+                <div class="switch-link">
+                    Already have an account? <a href="/Account/Login">Login here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js?v=12"></script>
+    <script>
+        initRegisterForm('/Account/Register', true, true);
+    </script>
+</body>
+</html>

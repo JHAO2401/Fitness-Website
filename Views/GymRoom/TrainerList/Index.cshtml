@@ -1,0 +1,126 @@
+﻿@model List<GYM.Models.ViewModels.TrainerListItemViewModel>
+@{
+    Layout = "~/Views/GymRoom/_GymRoomLayout.cshtml";
+    var myTrainers = ViewBag.MyTrainers as List<GYM.Models.ViewModels.MyTrainerViewModel>;
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+}
+
+@if (myTrainers != null && myTrainers.Count > 0)
+{
+    <section class="member-section">
+        <h2 class="member-section-title">Your Trainers</h2>
+        <div class="trainer-list-grid">
+            @foreach (var mt in myTrainers)
+            {
+                <a href="/GymRoom/MyBookings?trainerId=@mt.TrainerId" class="trainer-list-card my-trainer-card">
+                    <div class="my-trainer-avatar-wrap">
+                        <img src="@(string.IsNullOrEmpty(mt.AvatarUrl) ? "/image/logo.png" : mt.AvatarUrl)"
+                             alt="@mt.FullName" class="trainer-list-avatar"
+                             onerror="this.onerror=null; this.src='/image/logo.png';" />
+                        @if (mt.HasUnreadUpdate)
+                        {
+                            <span class="my-trainer-dot"></span>
+                        }
+                    </div>
+                    <div class="trainer-list-info">
+                        <h4>@mt.FullName</h4>
+                        <p class="trainer-list-specialty">@mt.Specialty</p>
+                        <div class="trainer-list-rank">
+                            <img src="@mt.RankImageUrl" alt="@mt.Rank" onerror="this.onerror=null; this.src='/image/logo.png';" />
+                            <span>@mt.Rank</span>
+                        </div>
+                        @if (mt.UpcomingCount > 0)
+                        {
+                            <span class="my-trainer-upcoming">@mt.UpcomingCount upcoming</span>
+                        }
+                    </div>
+                </a>
+            }
+        </div>
+    </section>
+}
+
+<section class="member-section">
+    <div class="trainer-list-header">
+        <h2 class="member-section-title">Our Trainers</h2>
+        <div class="filter-tabs">
+            <button class="@(ViewBag.SelectedGender == "All" ? "active" : "")" onclick="filterTrainers('gender', 'All')">All</button>
+            <button class="@(ViewBag.SelectedGender == "Male" ? "active" : "")" onclick="filterTrainers('gender', 'Male')">♂️ Male</button>
+            <button class="@(ViewBag.SelectedGender == "Female" ? "active" : "")" onclick="filterTrainers('gender', 'Female')">♀️ Female</button>
+        </div>
+    </div>
+
+    <div class="trainer-search-bar">
+        <input type="text" id="trainerSearchInput" placeholder="🔍 Search trainers by name or specialty..." value="@searchTerm" />
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="member-empty-state">No trainers found.</div>
+    }
+    else
+    {
+        <div class="trainer-list-grid">
+            @foreach (var trainer in Model)
+            {
+                <a href="/GymRoom/TrainerDetail?id=@trainer.TrainerId" class="trainer-list-card">
+                    <img src="@(string.IsNullOrEmpty(trainer.AvatarUrl) ? "/image/logo.png" : trainer.AvatarUrl)"
+                         alt="@trainer.FullName" class="trainer-list-avatar"
+                         onerror="this.onerror=null; this.src='/image/logo.png';" />
+                    <div class="trainer-list-info">
+                        <h4>
+                            @trainer.FullName
+                            @if (trainer.Gender == "Male")
+                            {
+                                <span title="Male">♂️</span>
+                            }
+                            else if (trainer.Gender == "Female")
+                            {
+                                <span title="Female">♀️</span>
+                            }
+                        </h4>
+                        <p class="trainer-list-specialty">@trainer.Specialty</p>
+                        @if (!string.IsNullOrEmpty(trainer.PhoneNumber))
+                        {
+                            <p class="trainer-list-phone">📞 @trainer.PhoneNumber</p>
+                        }
+                        <div class="trainer-list-rank">
+                            <img src="@trainer.RankImageUrl" alt="@trainer.Rank" onerror="this.onerror=null; this.src='/image/logo.png';" />
+                            <span>@trainer.Rank</span>
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</section>
+
+@section Scripts {
+    <script>
+        function filterTrainers(key, value) {
+            const url = new URL(window.location.href);
+            url.searchParams.set(key, value);
+            window.location.href = url.toString();
+        }
+
+        const searchInput = document.getElementById('trainerSearchInput');
+        let searchTimeout;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('search', searchInput.value);
+                window.location.href = url.toString();
+            }, 600);
+        });
+
+        searchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                clearTimeout(searchTimeout);
+                const url = new URL(window.location.href);
+                url.searchParams.set('search', searchInput.value);
+                window.location.href = url.toString();
+            }
+        });
+    </script>
+}

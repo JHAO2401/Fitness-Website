@@ -1,0 +1,135 @@
+﻿@model List<GYM.Models.ViewModels.AppointmentListItemViewModel>
+@{
+    Layout = "~/Views/User/Admin/_AdminLayout.cshtml";
+    string selectedStatus = ViewBag.SelectedStatus;
+}
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>All Appointments</h2>
+        <div class="filter-tabs">
+            <button class="@(selectedStatus == "All" ? "active" : "")" onclick="location.href='/Admin/ManageAppointments?status=All'">All</button>
+            <button class="@(selectedStatus == "Pending" ? "active" : "")" onclick="location.href='/Admin/ManageAppointments?status=Pending'">Pending</button>
+            <button class="@(selectedStatus == "Confirmed" ? "active" : "")" onclick="location.href='/Admin/ManageAppointments?status=Confirmed'">Confirmed</button>
+            <button class="@(selectedStatus == "Cancelled" ? "active" : "")" onclick="location.href='/Admin/ManageAppointments?status=Cancelled'">Cancelled</button>
+            <button class="@(selectedStatus == "Completed" ? "active" : "")" onclick="location.href='/Admin/ManageAppointments?status=Completed'">Completed</button>
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            No appointments found.@(selectedStatus != "All" ? $" (Filter: {selectedStatus})" : "")
+        </div>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Trainer</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Booked At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="apptTableBody">
+                @foreach (var appt in Model)
+                {
+                    <tr id="appt-row-@appt.AppointmentId">
+                        <td>
+                            @appt.MemberName
+                            <div class="sub-text">@appt.MemberEmail</div>
+                        </td>
+                        <td>@appt.TrainerName</td>
+                        <td>@appt.Date.ToString("dd MMM yyyy")</td>
+                        <td>@appt.StartTime.ToString(@"hh\:mm") - @appt.EndTime.ToString(@"hh\:mm")</td>
+                        <td><span class="appt-status @appt.Status">@appt.Status</span></td>
+                        <td>@appt.BookedAt.ToString("dd MMM yyyy, HH:mm")</td>
+                        <td>
+                            <button class="action-btn deactivate" onclick="confirmDeleteAppointment(@appt.AppointmentId)">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteApptModalOverlay">
+    <div class="modal-box small">
+        <div class="modal-header">
+            <h3>Delete Appointment</h3>
+            <button class="modal-close" onclick="closeDeleteApptModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-hint">Are you sure you want to permanently delete this appointment record? This action cannot be undone.</p>
+            <div class="summary-error" id="deleteApptError"></div>
+            <div class="modal-btn-row">
+                <button class="action-btn full-width" onclick="closeDeleteApptModal()">Cancel</button>
+                <button class="action-btn deactivate full-width" id="confirmDeleteBtn" onclick="deleteAppointment()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let appointmentToDelete = null;
+
+        function confirmDeleteAppointment(appointmentId) {
+            appointmentToDelete = appointmentId;
+            document.getElementById('deleteApptError').style.display = 'none';
+            document.getElementById('deleteApptModalOverlay').classList.add('open');
+        }
+
+        function closeDeleteApptModal() {
+            document.getElementById('deleteApptModalOverlay').classList.remove('open');
+            appointmentToDelete = null;
+        }
+
+        async function deleteAppointment() {
+            if (!appointmentToDelete) return;
+
+            const errorEl = document.getElementById('deleteApptError');
+            const btn = document.getElementById('confirmDeleteBtn');
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+
+            try {
+                const response = await fetch('/Admin/DeleteAppointment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ appointmentId: appointmentToDelete })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const row = document.getElementById('appt-row-' + appointmentToDelete);
+                    if (row) row.remove();
+                    closeDeleteApptModal();
+                } else {
+                    errorEl.textContent = result.message || 'Failed to delete appointment';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Something went wrong. Please try again.';
+                errorEl.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Delete';
+            }
+        }
+
+        document.getElementById('deleteApptModalOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closeDeleteApptModal();
+        });
+    </script>
+}

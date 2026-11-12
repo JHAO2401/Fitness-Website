@@ -1,0 +1,119 @@
+﻿@model List<GYM.Models.User>
+@{
+    Layout = "~/Views/User/Admin/_AdminLayout.cshtml";
+    string selectedRole = ViewBag.SelectedRole;
+    int currentUserId = ViewBag.CurrentUserId;
+}
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>All Users</h2>
+        <div class="filter-tabs">
+            <button class="@(selectedRole == "All" ? "active" : "")" onclick="location.href='/Admin/ManageUsers?role=All'">All</button>
+            <button class="@(selectedRole == "Admin" ? "active" : "")" onclick="location.href='/Admin/ManageUsers?role=Admin'">Admins</button>
+            <button class="@(selectedRole == "Member" ? "active" : "")" onclick="location.href='/Admin/ManageUsers?role=Member'">Members</button>
+            <button class="@(selectedRole == "Trainer" ? "active" : "")" onclick="location.href='/Admin/ManageUsers?role=Trainer'">Trainers</button>
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">No users found.</div>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Security</th>
+                    <th>Joined</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    bool isLocked = user.FailedLoginAttempts >= 3;
+
+                    <tr id="row-@user.UserId"
+                        data-user-id="@user.UserId"
+                        data-full-name="@user.FullName"
+                        data-email="@user.Email"
+                        data-phone="@(user.PhoneNumber ?? "-")"
+                        data-role="@user.Role"
+                        data-is-active="@user.IsActive.ToString().ToLower()"
+                        data-is-locked="@isLocked.ToString().ToLower()"
+                        data-failed-attempts="@user.FailedLoginAttempts"
+                        data-joined="@user.CreatedAt.ToString("dd MMM yyyy")"
+                        data-avatar="@user.AvatarUrl"
+                        data-is-self="@(user.UserId == currentUserId ? "true" : "false")">
+                        <td>
+                            @user.FullName
+                            @if (user.UserId == currentUserId)
+                            {
+                                <span class="you-tag">You</span>
+                            }
+                        </td>
+                        <td>@user.Email</td>
+                        <td>@(user.PhoneNumber ?? "-")</td>
+                        <td><span class="role-tag @user.Role">@user.Role</span></td>
+                        <td>
+                            <span class="status-tag @(user.IsActive ? "active" : "inactive")">
+                                <span class="status-dot @(user.IsActive ? "active" : "inactive")"></span>
+                                @(user.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td>
+                            @if (isLocked)
+                            {
+                                <span class="lock-warning">⚠️ Locked</span>
+                            }
+                            else if (user.FailedLoginAttempts > 0)
+                            {
+                                <span class="attempt-warning">@user.FailedLoginAttempts failed attempt(s)</span>
+                            }
+                            else
+                            {
+                                <span class="ok-text">—</span>
+                            }
+                        </td>
+                        <td>@user.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <button class="action-btn edit" onclick="openEditModalFromRow(this)">
+                                Edit
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+<!-- Edit User Modal (shared across Admin/Trainer/Member management pages) -->
+<div class="modal-overlay" id="editModalOverlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="modalUserName">Edit User</h3>
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="summary-error" id="modalError"></div>
+
+            @await Html.PartialAsync("~/Views/User/_ProfileCard.cshtml")
+
+            <hr class="divider" />
+
+            @await Html.PartialAsync("~/Views/User/_SecurityCard.cshtml")
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/user-edit.js"></script>
+}

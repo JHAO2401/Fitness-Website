@@ -1,0 +1,197 @@
+﻿@model GYM.Models.ViewModels.QuestPageViewModel
+@{
+    Layout = "~/Views/GymRoom/_GymRoomLayout.cshtml";
+}
+
+@if (Model.IsLoggedInMember)
+{
+    <section class="member-section">
+        <div class="member-card quest-rank-card large centered">
+            <img src="@Model.RankImageUrl" alt="@Model.Rank" class="rank-icon-img large"
+                 onerror="this.onerror=null; this.src='/image/logo.png';" />
+            <div>
+                <div class="quest-rank-label">Your Rank</div>
+                <div class="quest-rank-name">@Model.Rank</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="member-section">
+        <div class="member-card quest-exp-card">
+            <div class="quest-level-badge">Lv. @Model.Level</div>
+            <div class="quest-exp-info">
+                <div class="quest-exp-text">@Model.ExpIntoLevel / @Model.ExpNeededForLevel EXP</div>
+                <div class="quest-exp-bar-track">
+                    <div class="quest-exp-bar-fill" style="width:@((Model.ExpIntoLevel * 100) / Model.ExpNeededForLevel)%;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+else
+{
+    <section class="member-section">
+        <div class="member-cta-box">
+            <h3>Track Your Progress</h3>
+            <p>Login as a member to complete quests and earn EXP.</p>
+            <a href="/Account/Login" class="member-cta-btn">Login</a>
+        </div>
+    </section>
+}
+
+<section class="member-section">
+    <h2 class="member-section-title">Daily Quests</h2>
+    <div class="quest-list" id="dailyQuestList">
+        @foreach (var q in Model.DailyQuests)
+        {
+            <div class="quest-item @(q.IsCompleted ? "completed" : "")" id="quest-@q.Key">
+                <div class="quest-item-info">
+                    <h4>@q.Title</h4>
+                    <p>@q.Description</p>
+                    <span class="quest-exp-tag">+@q.ExpReward EXP</span>
+                </div>
+                @if (Model.IsLoggedInMember)
+                {
+                    @if (q.IsCompleted)
+                    {
+                        <button class="quest-check-btn done" disabled>✓ Done</button>
+                    }
+                    else
+                    {
+                        <button class="quest-check-btn" onclick="completeQuest('@q.Key', this)">Mark Complete</button>
+                    }
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<section class="member-section">
+    <h2 class="member-section-title">Weekly Quests</h2>
+    <div class="quest-list" id="weeklyQuestList">
+        @foreach (var q in Model.WeeklyQuests)
+        {
+            <div class="quest-item @(q.IsCompleted ? "completed" : "")" id="quest-@q.Key">
+                <div class="quest-item-info">
+                    <h4>@q.Title</h4>
+                    <p>@q.Description</p>
+                    <span class="quest-exp-tag">+@q.ExpReward EXP</span>
+                </div>
+                @if (Model.IsLoggedInMember)
+                {
+                    @if (q.IsCompleted)
+                    {
+                        <button class="quest-check-btn done" disabled>✓ Done</button>
+                    }
+                    else
+                    {
+                        <button class="quest-check-btn" onclick="completeQuest('@q.Key', this)">Mark Complete</button>
+                    }
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@if (Model.IsLoggedInMember && Model.TrainerQuests.Count > 0)
+{
+    <section class="member-section">
+        <h2 class="member-section-title">Quests From Your Trainer</h2>
+        <div class="quest-list" id="trainerQuestList">
+            @foreach (var tq in Model.TrainerQuests)
+            {
+                <div class="quest-item @(tq.Status == "Completed" ? "completed" : "")" id="tquest-@tq.TrainerQuestId">
+                    <div class="quest-item-info">
+                        <h4>@tq.Title</h4>
+                        @if (!string.IsNullOrEmpty(tq.Description))
+                        {
+                            <p>@tq.Description</p>
+                        }
+                        <span class="quest-exp-tag">+@tq.ExpReward EXP</span>
+                    </div>
+                    @if (tq.Status == "Completed")
+                    {
+                        <button class="quest-check-btn done" disabled>✓ Confirmed</button>
+                    }
+                    else if (tq.Status == "PendingReview")
+                    {
+                        <button class="quest-check-btn" disabled style="background:#e0a800;">Awaiting Trainer Review</button>
+                    }
+                    else
+                    {
+                        <button class="quest-check-btn" onclick="completeTrainerQuest(@tq.TrainerQuestId, this)">Mark Complete</button>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        async function completeQuest(questKey, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const response = await fetch('/Member/CompleteQuest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ questKey: questKey })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    btn.textContent = '✓ Done';
+                    btn.classList.add('done');
+                    document.getElementById('quest-' + questKey).classList.add('completed');
+                    updateExpBar(result.expIntoLevel, result.expNeeded, result.newLevel);
+                } else {
+                    alert(result.message || 'Failed to complete quest');
+                    btn.disabled = false;
+                    btn.textContent = 'Mark Complete';
+                }
+            } catch (err) {
+                alert('Something went wrong. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Mark Complete';
+            }
+        }
+
+        async function completeTrainerQuest(questId, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                const response = await fetch('/Member/CompleteTrainerQuest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trainerQuestId: questId })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    btn.textContent = 'Awaiting Trainer Review';
+                    btn.style.background = '#e0a800';
+                } else {
+                    alert(result.message || 'Failed to submit quest');
+                    btn.disabled = false;
+                    btn.textContent = 'Mark Complete';
+                }
+            } catch (err) {
+                alert('Something went wrong. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Mark Complete';
+            }
+        }
+
+        function updateExpBar(expIntoLevel, expNeeded, newLevel) {
+            const expTextEl = document.querySelector('.quest-exp-text');
+            const expBarEl = document.querySelector('.quest-exp-bar-fill');
+            const levelBadgeEl = document.querySelector('.quest-level-badge');
+            if (expTextEl) expTextEl.textContent = expIntoLevel + ' / ' + expNeeded + ' EXP';
+            if (expBarEl) expBarEl.style.width = ((expIntoLevel * 100) / expNeeded) + '%';
+            if (levelBadgeEl) levelBadgeEl.textContent = 'Lv. ' + newLevel;
+        }
+    </script>
+}

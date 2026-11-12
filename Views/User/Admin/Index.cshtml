@@ -1,0 +1,47 @@
+﻿@model GYM.Models.ViewModels.AdminDashboardViewModel
+@{
+    Layout = "~/Views/User/Admin/_AdminLayout.cshtml";
+}
+
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="stat-card-icon blue">🧑‍🏫</div>
+        <div>
+            <div class="stat-card-value">@Model.TotalTrainers</div>
+            <div class="stat-card-label">Total Trainers</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon green">👥</div>
+        <div>
+            <div class="stat-card-value">@Model.TotalMembers</div>
+            <div class="stat-card-label">Total Members</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon purple">✅</div>
+        <div>
+            <div class="stat-card-value">@Model.ActiveTrainers</div>
+            <div class="stat-card-label">Active Trainers</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon orange">✅</div>
+        <div>
+            <div class="stat-card-value">@Model.ActiveMembers</div>
+            <div class="stat-card-label">Active Members</div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>Quick Overview</h2>
+    </div>
+    <div class="empty-state">
+        Welcome to the Admin Dashboard. Use the sidebar to manage users, appointments, and gym information.
+    </div>
+</div>

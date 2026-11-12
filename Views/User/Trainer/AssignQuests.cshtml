@@ -1,0 +1,214 @@
+﻿@model List<GYM.Models.ViewModels.TrainerQuestListItemViewModel>
+@{
+    Layout = "~/Views/User/Trainer/_TrainerLayout.cshtml";
+    var eligibleMembers = ViewBag.EligibleMembers as List<GYM.Models.ViewModels.EligibleMemberViewModel>;
+}
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>Assign a New Quest</h2>
+    </div>
+    <div class="profile-form-body">
+        <div class="summary-error" id="createError"></div>
+        <div class="summary-success" id="createSuccess"></div>
+
+        @if (eligibleMembers == null || eligibleMembers.Count == 0)
+        {
+            <p style="color:#888; font-size:13px;">No members have booked with you yet. Once a member books an appointment, you can assign quests to them here.</p>
+        }
+        else
+        {
+            <form id="createQuestForm" novalidate>
+                <div class="form-group">
+                    <label for="MemberId">Assign To</label>
+                    <select id="MemberId">
+                        @foreach (var m in eligibleMembers.DistinctBy(x => x.MemberId))
+                        {
+                            <option value="@m.MemberId">@m.FullName (@m.Email)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="QuestTitle">Quest Title</label>
+                    <input type="text" id="QuestTitle" placeholder="e.g. Complete 20 push-ups" />
+                </div>
+
+                <div class="form-group">
+                    <label for="QuestDescription">Description</label>
+                    <textarea id="QuestDescription" rows="2" placeholder="Optional details"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="QuestExp">EXP Reward</label>
+                    <input type="number" id="QuestExp" min="1" value="20" />
+                </div>
+
+                <button type="submit" id="createQuestBtn">Assign Quest</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="panel" style="margin-top:24px;">
+    <div class="panel-header">
+        <h2>Quests I've Assigned</h2>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">No quests assigned yet.</div>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Quest</th>
+                    <th>EXP</th>
+                    <th>Status</th>
+                    <th>Assigned</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var q in Model)
+                {
+                    <tr id="tquest-row-@q.TrainerQuestId">
+                        <td>@q.MemberName</td>
+                        <td>
+                            @q.Title
+                            @if (!string.IsNullOrEmpty(q.Description))
+                            {
+                                <div class="sub-text">@q.Description</div>
+                            }
+                        </td>
+                        <td>@q.ExpReward</td>
+                        <td>
+                            @if (q.Status == "Completed")
+                            {
+                                <span class="appt-status Confirmed">Completed</span>
+                            }
+                            else if (q.Status == "PendingReview")
+                            {
+                                <span class="appt-status Pending">Pending Review</span>
+                            }
+                            else
+                            {
+                                <span class="appt-status" style="background:#eee;color:#888;">In Progress</span>
+                            }
+                        </td>
+                        <td>@q.CreatedAt.ToString("dd MMM yyyy")</td>
+                        <td class="action-cell">
+                            @if (q.Status == "PendingReview")
+                            {
+                                <button class="action-btn activate" onclick="confirmTrainerQuest(@q.TrainerQuestId)">Mark Done</button>
+                            }
+                            <button class="action-btn deactivate" onclick="deleteTrainerQuest(@q.TrainerQuestId)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        const createQuestForm = document.getElementById('createQuestForm');
+        if (createQuestForm) {
+            createQuestForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const errorEl = document.getElementById('createError');
+                const successEl = document.getElementById('createSuccess');
+                errorEl.style.display = 'none';
+                successEl.style.display = 'none';
+
+                const payload = {
+                    MemberId: parseInt(document.getElementById('MemberId').value),
+                    Title: document.getElementById('QuestTitle').value.trim(),
+                    Description: document.getElementById('QuestDescription').value.trim(),
+                    ExpReward: parseInt(document.getElementById('QuestExp').value) || 0
+                };
+
+                if (!payload.Title) {
+                    errorEl.textContent = 'Quest title is required';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+
+                const btn = document.getElementById('createQuestBtn');
+                btn.disabled = true;
+                btn.textContent = 'Assigning...';
+
+                try {
+                    const response = await fetch('/Trainer/CreateTrainerQuest', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        successEl.textContent = 'Quest assigned successfully.';
+                        successEl.style.display = 'block';
+                        setTimeout(() => location.reload(), 800);
+                    } else {
+                        errorEl.textContent = result.errors.join(' ');
+                        errorEl.style.display = 'block';
+                    }
+                } catch (err) {
+                    errorEl.textContent = 'Something went wrong. Please try again.';
+                    errorEl.style.display = 'block';
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Assign Quest';
+                }
+            });
+        }
+
+        async function deleteTrainerQuest(id) {
+            if (!confirm('Delete this quest?')) return;
+
+            try {
+                const response = await fetch('/Trainer/DeleteTrainerQuest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trainerQuestId: id })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const row = document.getElementById('tquest-row-' + id);
+                    if (row) row.remove();
+                } else {
+                    alert(result.message || 'Failed to delete quest');
+                }
+            } catch (err) {
+                alert('Something went wrong. Please try again.');
+            }
+        }
+                async function confirmTrainerQuest(id) {
+            if (!confirm('Confirm this quest as completed? The member will receive their EXP.')) return;
+
+            try {
+                const response = await fetch('/Trainer/ConfirmTrainerQuest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trainerQuestId: id })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message || 'Failed to confirm quest');
+                }
+            } catch (err) {
+                alert('Something went wrong. Please try again.');
+            }
+        }
+    </script>
+}

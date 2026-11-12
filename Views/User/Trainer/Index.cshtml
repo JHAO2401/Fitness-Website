@@ -1,0 +1,55 @@
+﻿@model GYM.Models.ViewModels.TrainerDashboardViewModel
+@{
+    Layout = "~/Views/User/Trainer/_TrainerLayout.cshtml";
+}
+
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="stat-card-icon blue">🧑‍🏫</div>
+        <div>
+            <div class="stat-card-value">@Model.Specialty</div>
+            <div class="stat-card-label">Specialty</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <img src="@Model.RankImageUrl" alt="@Model.Rank" class="rank-icon-img"
+             onerror="this.onerror=null; this.src='/image/logo.png';" />
+        <div>
+            <div class="stat-card-value">@Model.Rank</div>
+            <div class="stat-card-label">@Model.Lbs lbs</div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>Welcome, @Model.FullName</h2>
+    </div>
+    <div class="profile-form-body">
+        <p style="color:#666; font-size:14px; line-height:1.6; white-space:pre-line;">@Model.Description</p>
+    </div>
+</div>
+
+<div class="panel" style="margin-top:24px;">
+    <div class="panel-header">
+        <h2>What would you like to do?</h2>
+    </div>
+    <div class="equipment-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
+        <a href="/Trainer/EditProfile" class="trainer-action-card">
+            <div class="trainer-action-icon">🧑‍🏫</div>
+            <h4>Edit My Profile</h4>
+            <p>Update your specialty, description, and rank</p>
+        </a>
+        <a href="/Trainer/Availability" class="trainer-action-card">
+            <div class="trainer-action-icon">🗓️</div>
+            <h4>Manage Availability</h4>
+            <p>Set your available time slots</p>
+        </a>
+        <a href="/Trainer/Appointments" class="trainer-action-card">
+            <div class="trainer-action-icon">📋</div>
+            <h4>View Appointments</h4>
+            <p>See member bookings</p>
+        </a>
+    </div>
+</div>

@@ -1,0 +1,23 @@
+# Visual Studio / ASP.NET Core
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+
+# Application settings that may contain local secrets
+appsettings.Development.json
+supabase.local.properties
+local.properties
+
+# OS
+.DS_Store
+Thumbs.db

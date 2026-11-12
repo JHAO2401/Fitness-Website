@@ -1,0 +1,106 @@
+﻿@model List<GYM.Models.ViewModels.TrainerAppointmentViewModel>
+@{
+    Layout = "~/Views/User/Trainer/_TrainerLayout.cshtml";
+    string selectedStatus = ViewBag.SelectedStatus;
+}
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>My Appointments</h2>
+        <div class="filter-tabs">
+            <button class="@(selectedStatus == "All" ? "active" : "")" onclick="location.href='/Trainer/Appointments?status=All'">All</button>
+            <button class="@(selectedStatus == "Pending" ? "active" : "")" onclick="location.href='/Trainer/Appointments?status=Pending'">Pending</button>
+            <button class="@(selectedStatus == "Confirmed" ? "active" : "")" onclick="location.href='/Trainer/Appointments?status=Confirmed'">Confirmed</button>
+            <button class="@(selectedStatus == "Cancelled" ? "active" : "")" onclick="location.href='/Trainer/Appointments?status=Cancelled'">Cancelled</button>
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            No appointments found.@(selectedStatus != "All" ? $" (Filter: {selectedStatus})" : "")
+        </div>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Booked At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var appt in Model)
+                {
+                    <tr id="appt-row-@appt.AppointmentId">
+                        <td>
+                            @appt.MemberName
+                            <div class="sub-text">@appt.MemberEmail</div>
+                            @if (!string.IsNullOrEmpty(appt.MemberPhone))
+                            {
+                                <div class="sub-text">@appt.MemberPhone</div>
+                            }
+                        </td>
+                        <td>@appt.Date.ToString("dd MMM yyyy")</td>
+                        <td>@appt.StartTime.ToString(@"hh\:mm") - @appt.EndTime.ToString(@"hh\:mm")</td>
+                        <td><span class="appt-status @appt.Status" id="status-@appt.AppointmentId">@appt.Status</span></td>
+                        <td>@appt.BookedAt.ToString("dd MMM yyyy, HH:mm")</td>
+                        <td class="action-cell" id="actions-@appt.AppointmentId">
+                            @if (appt.Status == "Pending")
+                            {
+                                <button class="action-btn activate" onclick="confirmAppointment(@appt.AppointmentId)">Confirm</button>
+                                <button class="action-btn deactivate" onclick="cancelAppointment(@appt.AppointmentId)">Cancel</button>
+                            }
+                            else if (appt.Status == "Confirmed")
+                            {
+                                <button class="action-btn deactivate" onclick="cancelAppointment(@appt.AppointmentId)">Cancel</button>
+                            }
+                            else
+                            {
+                                <span class="protected-text">No actions</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        async function confirmAppointment(id) {
+            if (!confirm('Confirm this appointment?')) return;
+            await handleAppointmentAction(id, '/Trainer/ConfirmAppointment', 'Confirmed');
+        }
+
+        async function cancelAppointment(id) {
+            if (!confirm('Cancel this appointment?')) return;
+            await handleAppointmentAction(id, '/Trainer/CancelAppointment', 'Cancelled');
+        }
+
+        async function handleAppointmentAction(id, endpoint, newStatus) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ appointmentId: id })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message || 'Action failed');
+                }
+            } catch (err) {
+                alert('Something went wrong. Please try again.');
+            }
+        }
+    </script>
+}

@@ -1,0 +1,119 @@
+﻿@model GYM.Models.ViewModels.TrainerProfileEditViewModel
+@{
+    Layout = "~/Views/User/Trainer/_TrainerLayout.cshtml";
+}
+
+<div class="panel">
+    <div class="panel-header">
+        <h2>My Trainer Profile</h2>
+    </div>
+    <div class="profile-form-body">
+        <div class="summary-error" id="summaryError"></div>
+        <div class="summary-success" id="summarySuccess"></div>
+
+        <form id="trainerProfileForm" novalidate>
+            <div class="form-group">
+                <label for="Specialty">Specialty</label>
+                <input type="text" id="Specialty" value="@Model.Specialty" placeholder="e.g. Weight Loss, Strength Training" />
+                <div class="field-hint">This will be shown to members browsing the Trainer List.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="Description">Description</label>
+                <textarea id="Description" rows="5" placeholder="Tell members about your experience and training style...">@Model.Description</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="Lbs">Weight Lifted (lbs)</label>
+                <input type="number" id="Lbs" min="0" value="@Model.Lbs" oninput="updateRankPreview(this.value)" />
+                <div class="field-hint">Your rank is determined automatically based on this value.</div>
+            </div>
+
+            <div class="rank-preview-box">
+                <img id="rankPreviewImg" src="" alt="Rank" class="rank-icon-img" onerror="this.onerror=null; this.src='/image/logo.png';" />
+                <div>
+                    <div class="rank-preview-label">Current Rank</div>
+                    <div id="rankPreviewName" class="rank-preview-name">-</div>
+                </div>
+            </div>
+
+            <button type="submit" id="saveTrainerProfileBtn">Save Changes</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function getRankFromLbs(lbs) {
+            if (lbs >= 1000) return 'God';
+            if (lbs >= 700) return 'Titan';
+            if (lbs >= 500) return 'Champion';
+            if (lbs >= 400) return 'Diamond';
+            if (lbs >= 300) return 'Platinum';
+            if (lbs >= 200) return 'Gold';
+            if (lbs >= 100) return 'Silver';
+            return 'Bronze';
+        }
+
+        function updateRankPreview(lbsValue) {
+            const lbs = parseInt(lbsValue) || 0;
+            const rank = getRankFromLbs(lbs);
+            document.getElementById('rankPreviewImg').src = '/image/RankUP/' + rank + '.png';
+            document.getElementById('rankPreviewName').textContent = rank;
+        }
+
+        // Initialize preview on page load
+        updateRankPreview(document.getElementById('Lbs').value);
+
+        document.getElementById('trainerProfileForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const summaryError = document.getElementById('summaryError');
+            const summarySuccess = document.getElementById('summarySuccess');
+            summaryError.style.display = 'none';
+            summarySuccess.style.display = 'none';
+
+            const lbsValue = parseInt(document.getElementById('Lbs').value) || 0;
+
+            if (lbsValue < 0) {
+                summaryError.textContent = 'Lbs cannot be negative';
+                summaryError.style.display = 'block';
+                return;
+            }
+
+            const payload = {
+                Specialty: document.getElementById('Specialty').value.trim(),
+                Description: document.getElementById('Description').value.trim(),
+                Lbs: lbsValue
+            };
+
+            const btn = document.getElementById('saveTrainerProfileBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const response = await fetch('/Trainer/UpdateTrainerProfile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    summarySuccess.textContent = `Trainer profile updated successfully. New rank: ${result.rank}`;
+                    summarySuccess.style.display = 'block';
+                    updateRankPreview(lbsValue);
+                } else {
+                    summaryError.textContent = result.errors.join(' ');
+                    summaryError.style.display = 'block';
+                }
+            } catch (err) {
+                summaryError.textContent = 'Something went wrong. Please try again.';
+                summaryError.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Changes';
+            }
+        });
+    </script>
+}
